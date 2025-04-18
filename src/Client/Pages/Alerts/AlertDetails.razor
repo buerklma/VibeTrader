@@ -1,0 +1,199 @@
+@page "/alerts/{Id:guid}"
+@using VibeTrader.Client.State.AlertState
+@using VibeTrader.Domain.Enums
+@using Fluxor
+@inject NavigationManager NavigationManager
+@inject IDispatcher Dispatcher
+@inject IState<AlertState> AlertState
+@inject IJSRuntime JSRuntime
+@inject VibeTrader.Client.Services.IAlertService AlertService
+
+<PageTitle>Alert Details</PageTitle>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1>Alert Details</h1>
+            <button class="btn btn-secondary" @onclick="GoBack">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(AlertState.Value.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Error!</strong> @AlertState.Value.ErrorMessage
+                <button type="button" class="btn-close" @onclick="ClearError" aria-label="Close"></button>
+            </div>
+        }
+
+        @if (_isLoading || AlertState.Value.IsLoading)
+        {
+            <div class="d-flex justify-content-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (_currentAlert == null && AlertState.Value.CurrentAlert == null)
+        {
+            <div class="alert alert-warning">
+                Alert not found. The alert may have been deleted.
+                <a href="/alerts" class="alert-link">Return to alert list</a>
+            </div>
+        }
+        else
+        {
+            var alert = _currentAlert ?? AlertState.Value.CurrentAlert;
+            
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3>@alert.Symbol</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h4>Target Price</h4>
+                            <p class="lead">@alert.TargetPrice.ToString("C")</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>Alert Type</h4>
+                            <p class="lead">
+                                @if (alert.Type == AlertType.Above)
+                                {
+                                    <span>Alert when price goes above target</span>
+                                }
+                                else
+                                {
+                                    <span>Alert when price goes below target</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h4>Status</h4>
+                            <p>
+                                @if (alert.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else if (alert.TriggeredOn.HasValue)
+                                {
+                                    <span class="badge bg-warning text-dark">Triggered on @alert.TriggeredOn.Value.ToLocalTime().ToString("g")</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactive</span>
+                                }
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>Created On</h4>
+                            <p>@alert.CreatedOn.ToLocalTime().ToString("g")</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group">
+                        <button class="btn btn-primary" @onclick="() => EditAlert(alert.Id)">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button class="btn btn-danger" @onclick="() => DeleteAlert(alert.Id, alert.Symbol)">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private bool _isLoading;
+    private VibeTrader.Application.DTOs.AlertDto? _currentAlert;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAlertData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != Guid.Empty)
+        {
+            await LoadAlertData();
+        }
+    }
+
+    private async Task LoadAlertData()
+    {
+        _isLoading = true;
+        
+        try
+        {
+            // Use Fluxor state management
+            Dispatcher.Dispatch(new LoadAlertAction(Id));
+            
+            // Also directly fetch the alert as a fallback
+            _currentAlert = await AlertService.GetAlertByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions
+            Console.Error.WriteLine($"Error loading alert: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void EditAlert(Guid id)
+    {
+        NavigationManager.NavigateTo($"/alerts/edit/{id}");
+    }
+
+    private async Task DeleteAlert(Guid id, string symbol)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete the alert for {symbol}?"))
+        {
+            _isLoading = true;
+            
+            try
+            {
+                // Dispatch the action for Fluxor state management
+                Dispatcher.Dispatch(new DeleteAlertAction(id));
+                
+                // Also directly call the service as a fallback
+                await AlertService.DeleteAlertAsync(id);
+                
+                // Navigate back to the list after successful deletion
+                NavigationManager.NavigateTo("/alerts");
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions
+                Console.Error.WriteLine($"Error deleting alert: {ex.Message}");
+            }
+            finally
+            {
+                _isLoading = false;
+            }
+        }
+    }
+
+    private void ClearError()
+    {
+        Dispatcher.Dispatch(new ClearErrorAction());
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/alerts");
+    }
+}

@@ -1,0 +1,175 @@
+@page "/alerts/edit/{Id:guid}"
+@using VibeTrader.Domain.Enums
+@using VibeTrader.Client.State.AlertState
+@using System.ComponentModel.DataAnnotations
+@using Fluxor
+@implements IDisposable
+@inject NavigationManager NavigationManager
+@inject IDispatcher Dispatcher
+@inject IState<AlertState> AlertState
+@inject VibeTrader.Client.Services.IAlertService AlertService
+
+<PageTitle>Edit Alert</PageTitle>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <h1>Edit Stock Alert</h1>
+
+        @if (!string.IsNullOrEmpty(AlertState.Value.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Error!</strong> @AlertState.Value.ErrorMessage
+                <button type="button" class="btn-close" @onclick="ClearError" aria-label="Close"></button>
+            </div>
+        }
+
+        @if (AlertState.Value.IsLoading)
+        {
+            <div class="d-flex justify-content-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (AlertState.Value.CurrentAlert == null)
+        {
+            <div class="alert alert-warning">
+                Alert not found. The alert may have been deleted.
+                <a href="/alerts" class="alert-link">Return to alert list</a>
+            </div>
+        }
+        else
+        {
+            <div class="card">
+                <div class="card-body">
+                    <EditForm Model="@_model" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label for="symbol" class="form-label">Stock Symbol</label>
+                            <InputText id="symbol" @bind-Value="_model.Symbol" class="form-control" />
+                            <ValidationMessage For="@(() => _model.Symbol)" />
+                            <small class="form-text text-muted">Example: AAPL, MSFT, GOOGL</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="targetPrice" class="form-label">Target Price</label>
+                            <InputNumber id="targetPrice" @bind-Value="_model.TargetPrice" class="form-control" />
+                            <ValidationMessage For="@(() => _model.TargetPrice)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="alertType" class="form-label">Alert Type</label>
+                            <InputSelect id="alertType" @bind-Value="_model.Type" class="form-control">
+                                <option value="@AlertType.Above">Price Above Target</option>
+                                <option value="@AlertType.Below">Price Below Target</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => _model.Type)" />
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" disabled="@AlertState.Value.IsLoading">
+                                @if (AlertState.Value.IsLoading)
+                                {
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <span class="ms-1">Saving...</span>
+                                }
+                                else
+                                {
+                                    <span>Save Changes</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private AlertModel _model = new();
+    private bool _isLoading;
+
+    protected override void OnInitialized()
+    {
+        Dispatcher.Dispatch(new LoadAlertAction(Id));
+        // Subscribe to state changes with correct event signature
+        AlertState.StateChanged += OnStateChanged;
+    }
+
+    // Event handler for state changes
+    private void OnStateChanged(object? sender, EventArgs e)
+    {
+        // Update the UI when state changes
+        StateHasChanged();
+        
+        // Only update the model if the current alert exists and matches our ID
+        var alert = AlertState.Value.CurrentAlert;
+        if (alert != null && alert.Id == Id)
+        {
+            _model.Symbol = alert.Symbol;
+            _model.TargetPrice = alert.TargetPrice;
+            _model.Type = alert.Type;
+        }
+    }
+
+    // Clean up subscription when component is disposed
+    public void Dispose()
+    {
+        AlertState.StateChanged -= OnStateChanged;
+    }
+
+    private class AlertModel
+    {
+        [Required(ErrorMessage = "Stock symbol is required")]
+        [StringLength(10, ErrorMessage = "Symbol cannot be longer than 10 characters")]
+        public string Symbol { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Target price is required")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Target price must be greater than 0")]
+        public decimal TargetPrice { get; set; }
+
+        [Required(ErrorMessage = "Alert type is required")]
+        public AlertType Type { get; set; } = AlertType.Above;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        _isLoading = true;
+        try
+        {
+            // Dispatch the action for Fluxor state management
+            Dispatcher.Dispatch(new UpdateAlertAction(Id, _model.Symbol, _model.TargetPrice, _model.Type));
+            
+            // But also directly call the service as a fallback to ensure it works
+            await AlertService.UpdateAlertAsync(Id, _model.Symbol, _model.TargetPrice, _model.Type);
+            
+            // Navigate back to the list after successful update
+            NavigationManager.NavigateTo("/alerts");
+        }
+        catch (Exception ex)
+        {
+            // Handle any exceptions that might occur
+            Console.Error.WriteLine($"Error updating alert: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void ClearError()
+    {
+        Dispatcher.Dispatch(new ClearErrorAction());
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/alerts");
+    }
+}

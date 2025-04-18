@@ -1,0 +1,126 @@
+@page "/alerts/create"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+
+<h1>Create Stock Alert</h1>
+
+@if (ErrorMessage != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Error!</strong> @ErrorMessage
+        <button type="button" class="btn-close" @onclick="ClearError" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <EditForm Model="@_model" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-3">
+                        <label for="symbol" class="form-label">Stock Symbol</label>
+                        <InputText id="symbol" @bind-Value="_model.Symbol" class="form-control" />
+                        <ValidationMessage For="@(() => _model.Symbol)" />
+                        <small class="form-text text-muted">Example: AAPL, MSFT, GOOGL</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="targetPrice" class="form-label">Target Price</label>
+                        <InputNumber id="targetPrice" @bind-Value="_model.TargetPrice" class="form-control" />
+                        <ValidationMessage For="@(() => _model.TargetPrice)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="alertType" class="form-label">Alert Type</label>
+                        <InputSelect id="alertType" @bind-Value="_model.Type" class="form-control">
+                            <option value="@VibeTrader.Domain.Enums.AlertType.Above">Price Above Target</option>
+                            <option value="@VibeTrader.Domain.Enums.AlertType.Below">Price Below Target</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => _model.Type)" />
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+                        <button type="submit" class="btn btn-primary" disabled="@IsLoading">
+                            @if (IsLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span class="ms-1">Creating...</span>
+                            }
+                            else
+                            {
+                                <span>Create Alert</span>
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private AlertModel _model = new();
+    private bool IsLoading = false;
+    private string? ErrorMessage = null;
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
+    
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; } = default!;
+    
+    [Inject]
+    private VibeTrader.Client.Services.IAlertService AlertService { get; set; } = default!;
+
+    private class AlertModel
+    {
+        [Required(ErrorMessage = "Stock symbol is required")]
+        [StringLength(10, ErrorMessage = "Symbol cannot be longer than 10 characters")]
+        public string Symbol { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Target price is required")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Target price must be greater than 0")]
+        public decimal TargetPrice { get; set; } = 0;
+
+        [Required(ErrorMessage = "Alert type is required")]
+        public VibeTrader.Domain.Enums.AlertType Type { get; set; } = VibeTrader.Domain.Enums.AlertType.Above;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+        
+        try
+        {
+            // Call the service to create the alert
+            await AlertService.CreateAlertAsync(_model.Symbol, _model.TargetPrice, _model.Type);
+            
+            // Navigate back to the list after successful creation
+            NavigationManager.NavigateTo("/alerts");
+        }
+        catch (Exception ex)
+        {
+            // Handle any exceptions that might occur
+            ErrorMessage = $"Error creating alert: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void ClearError()
+    {
+        ErrorMessage = null;
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/alerts");
+    }
+}
