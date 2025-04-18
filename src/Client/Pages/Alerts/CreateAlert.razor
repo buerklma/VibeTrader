@@ -2,6 +2,11 @@
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Forms
+@using VibeTrader.Domain.Enums
+@using VibeTrader.Client.Services.Interfaces
+
+@inject IAlertService AlertService
+@inject NavigationManager NavigationManager
 
 <h1>Create Stock Alert</h1>
 
@@ -36,8 +41,8 @@
                     <div class="mb-3">
                         <label for="alertType" class="form-label">Alert Type</label>
                         <InputSelect id="alertType" @bind-Value="_model.Type" class="form-control">
-                            <option value="@VibeTrader.Domain.Enums.AlertType.Above">Price Above Target</option>
-                            <option value="@VibeTrader.Domain.Enums.AlertType.Below">Price Below Target</option>
+                            <option value="@AlertType.PriceAbove">Price Above Target</option>
+                            <option value="@AlertType.PriceBelow">Price Below Target</option>
                         </InputSelect>
                         <ValidationMessage For="@(() => _model.Type)" />
                     </div>
@@ -67,15 +72,6 @@
     private bool IsLoading = false;
     private string? ErrorMessage = null;
 
-    [Inject]
-    private NavigationManager NavigationManager { get; set; } = default!;
-    
-    [Inject]
-    private IJSRuntime JSRuntime { get; set; } = default!;
-    
-    [Inject]
-    private VibeTrader.Client.Services.IAlertService AlertService { get; set; } = default!;
-
     private class AlertModel
     {
         [Required(ErrorMessage = "Stock symbol is required")]
@@ -87,7 +83,7 @@
         public decimal TargetPrice { get; set; } = 0;
 
         [Required(ErrorMessage = "Alert type is required")]
-        public VibeTrader.Domain.Enums.AlertType Type { get; set; } = VibeTrader.Domain.Enums.AlertType.Above;
+        public VibeTrader.Domain.Enums.AlertType Type { get; set; } = VibeTrader.Domain.Enums.AlertType.PriceAbove;
     }
 
     private async Task HandleValidSubmit()
@@ -98,7 +94,7 @@
         try
         {
             // Call the service to create the alert
-            await AlertService.CreateAlertAsync(_model.Symbol, _model.TargetPrice, _model.Type);
+            await AlertService.CreateAlertAsync(_model.Symbol, _model.TargetPrice, _model.Type, notes: null);
             
             // Navigate back to the list after successful creation
             NavigationManager.NavigateTo("/alerts");

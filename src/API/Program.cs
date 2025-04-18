@@ -11,6 +11,9 @@ using VibeTrader.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add service defaults (Aspire)
+builder.AddServiceDefaults();
+
 // Add services to the container.
 builder.Services.AddControllers();
 
@@ -57,6 +60,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -68,13 +72,11 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
-
 app.UseRouting();
-
 app.UseCors("CorsPolicy");
-
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapDefaultEndpoints();
 
 app.Run();

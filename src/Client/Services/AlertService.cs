@@ -1,93 +1,157 @@
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Json;
 using System.Threading.Tasks;
+using Fluxor;
+using Microsoft.Extensions.Logging;
+using VibeTrader.Application.Commands.CreateAlert;
+using VibeTrader.Application.Commands.UpdateAlert;
 using VibeTrader.Application.DTOs;
+using VibeTrader.Client.Services.Interfaces;
+using VibeTrader.Client.State.AlertState;
 using VibeTrader.Domain.Enums;
 
 namespace VibeTrader.Client.Services
 {
     /// <summary>
-    /// Implementation of the IAlertService that communicates with the API
+    /// Service that handles alert operations and coordinates with Fluxor state
     /// </summary>
     public class AlertService : IAlertService
     {
-        private readonly HttpClient _httpClient;
-        private const string BaseUrl = "api/alerts";
+        private readonly IDispatcher _dispatcher;
+        private readonly ILogger<AlertService> _logger;
+        private readonly IAlertApiService _alertApiService;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AlertService"/> class.
-        /// </summary>
-        /// <param name="httpClient">The HTTP client.</param>
-        public AlertService(HttpClient httpClient)
+        public AlertService(
+            IDispatcher dispatcher, 
+            ILogger<AlertService> logger, 
+            IAlertApiService alertApiService)
         {
-            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _dispatcher = dispatcher;
+            _logger = logger;
+            _alertApiService = alertApiService;
         }
 
-        /// <inheritdoc />
-        public async Task<List<AlertDto>> GetAlertsAsync(bool activeOnly = false)
+        /// <inheritdoc/>
+        public Task<List<AlertDto>> GetAlertsAsync(bool activeOnly = false)
         {
-            try
-            {
-                var url = activeOnly ? $"{BaseUrl}?activeOnly=true" : BaseUrl;
-                var response = await _httpClient.GetFromJsonAsync<List<AlertDto>>(url);
-                return response ?? new List<AlertDto>();
-            }
-            catch (Exception)
-            {
-                // In a real application, we would log this error and provide better error handling
-                return new List<AlertDto>();
-            }
+            _logger.LogInformation("Getting alerts (ActiveOnly: {ActiveOnly})", activeOnly);
+            return _alertApiService.GetAlertsAsync(activeOnly);
         }
 
-        /// <inheritdoc />
-        public async Task<AlertDto> GetAlertByIdAsync(Guid id)
+        /// <inheritdoc/>
+        public Task<AlertDto> GetAlertByIdAsync(Guid id)
         {
-            return await _httpClient.GetFromJsonAsync<AlertDto>($"{BaseUrl}/{id}") 
-                ?? throw new Exception($"Failed to retrieve alert with ID {id}");
+            _logger.LogInformation("Getting alert with ID: {AlertId}", id);
+            return _alertApiService.GetAlertByIdAsync(id);
         }
 
-        /// <inheritdoc />
-        public async Task<AlertDto> CreateAlertAsync(string symbol, decimal targetPrice, AlertType type)
+        /// <inheritdoc/>
+        public Task LoadAlertsAsync(bool activeOnly = false)
         {
-            var request = new
+            _logger.LogInformation("Loading alerts (ActiveOnly: {ActiveOnly})", activeOnly);
+            _dispatcher.Dispatch(new LoadAlertsAction(activeOnly));
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
+        public Task<AlertDto> GetAlertAsync(Guid id)
+        {
+            _logger.LogInformation("Getting alert with ID: {AlertId}", id);
+            _dispatcher.Dispatch(new LoadAlertAction(id));
+            // Call the API service to get the alert data
+            return _alertApiService.GetAlertByIdAsync(id);
+        }
+
+        /// <inheritdoc/>
+        public Task<AlertDto> CreateAlertAsync(string symbol, decimal targetPrice, AlertType type)
+        {
+            _logger.LogInformation("Creating alert for symbol {Symbol} at price {TargetPrice}", symbol, targetPrice);
+            
+            var command = new CreateAlertCommand
             {
                 Symbol = symbol,
                 TargetPrice = targetPrice,
-                Type = type
+                Type = type,
+                CreatedBy = "User" // In a real app, this would come from authentication
             };
-
-            var response = await _httpClient.PostAsJsonAsync(BaseUrl, request);
-            response.EnsureSuccessStatusCode();
-
-            return await response.Content.ReadFromJsonAsync<AlertDto>()
-                ?? throw new Exception("Failed to deserialize created alert");
+            
+            return _alertApiService.CreateAlertAsync(command);
         }
 
-        /// <inheritdoc />
-        public async Task<AlertDto> UpdateAlertAsync(Guid id, string symbol, decimal targetPrice, AlertType type)
+        /// <inheritdoc/>
+        public Task CreateAlertAsync(string symbol, decimal targetPrice, AlertType type, string? notes)
         {
-            var request = new
+            _logger.LogInformation("Creating alert through state for symbol {Symbol}", symbol);
+            
+            _dispatcher.Dispatch(new CreateAlertAction(symbol, targetPrice, type));
+            
+            var command = new CreateAlertCommand
+            {
+                Symbol = symbol,
+                TargetPrice = targetPrice,
+                Type = type,
+                Notes = notes,
+                CreatedBy = "User" // In a real app, this would come from authentication
+            };
+            
+            return _alertApiService.CreateAlertAsync(command);
+        }
+
+        /// <inheritdoc/>
+        public Task<AlertDto> UpdateAlertAsync(Guid id, string symbol, decimal targetPrice, AlertType type)
+        {
+            _logger.LogInformation("Updating alert with ID: {AlertId}", id);
+            
+            var command = new UpdateAlertCommand
             {
                 Id = id,
                 Symbol = symbol,
                 TargetPrice = targetPrice,
                 Type = type
             };
-
-            var response = await _httpClient.PutAsJsonAsync($"{BaseUrl}/{id}", request);
-            response.EnsureSuccessStatusCode();
-
-            return await response.Content.ReadFromJsonAsync<AlertDto>()
-                ?? throw new Exception("Failed to deserialize updated alert");
+            
+            return _alertApiService.UpdateAlertAsync(command);
         }
 
-        /// <inheritdoc />
-        public async Task DeleteAlertAsync(Guid id)
+        /// <inheritdoc/>
+        public Task UpdateAlertAsync(Guid id, string symbol, decimal targetPrice, AlertType type, string? notes)
         {
-            var response = await _httpClient.DeleteAsync($"{BaseUrl}/{id}");
-            response.EnsureSuccessStatusCode();
+            _logger.LogInformation("Updating alert through state with ID: {AlertId}", id);
+            
+            _dispatcher.Dispatch(new UpdateAlertAction(id, symbol, targetPrice, type));
+            
+            var command = new UpdateAlertCommand
+            {
+                Id = id,
+                Symbol = symbol,
+                TargetPrice = targetPrice,
+                Type = type,
+                Notes = notes
+            };
+            
+            return _alertApiService.UpdateAlertAsync(command);
+        }
+
+        /// <inheritdoc/>
+        public Task DeleteAlertAsync(Guid id)
+        {
+            _logger.LogInformation("Deleting alert with ID: {AlertId}", id);
+            _dispatcher.Dispatch(new DeleteAlertAction(id));
+            return _alertApiService.DeleteAlertAsync(id);
+        }
+
+        /// <inheritdoc/>
+        public void ClearSelectedAlert()
+        {
+            _logger.LogDebug("Clearing selected alert");
+            _dispatcher.Dispatch(new ClearCurrentAlertAction());
+        }
+
+        /// <inheritdoc/>
+        public void ClearError()
+        {
+            _logger.LogDebug("Clearing error message");
+            _dispatcher.Dispatch(new ClearErrorAction());
         }
     }
 }

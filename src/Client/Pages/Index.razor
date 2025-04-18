@@ -1,0 +1,115 @@
+@page "/"
+@using Fluxor
+@using VibeTrader.Client.State
+@using VibeTrader.Client.Services.Interfaces
+@inject IState<AlertsState> AlertsState
+@inject IAlertService AlertService
+@inject NavigationManager NavigationManager
+
+<PageTitle>VibeTrader</PageTitle>
+
+<div class="container mt-4">
+    <div class="jumbotron">
+        <h1 class="display-4">Welcome to VibeTrader</h1>
+        <p class="lead">Your personal stock price alert management system</p>
+        <hr class="my-4">
+        <p>Create and manage price alerts for your favorite stocks. Get notified when prices hit your target.</p>
+        <button class="btn btn-primary btn-lg" @onclick="NavigateToAlerts">
+            <i class="bi bi-bell me-2"></i> Manage Alerts
+        </button>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card text-center mb-4">
+                <div class="card-body">
+                    <i class="bi bi-bell-fill text-primary" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-3">Create Alerts</h5>
+                    <p class="card-text">Set up price alerts for any stock. Specify target prices and get notified when they're reached.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center mb-4">
+                <div class="card-body">
+                    <i class="bi bi-graph-up-arrow text-success" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-3">Track Stocks</h5>
+                    <p class="card-text">Our system continuously monitors stock prices and triggers alerts when conditions are met.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center mb-4">
+                <div class="card-body">
+                    <i class="bi bi-gear-fill text-secondary" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-3">Manage Preferences</h5>
+                    <p class="card-text">Customize your alert preferences and notification settings to suit your needs.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (AlertsState.Value.IsInitialized)
+    {
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Active Alerts Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (!AlertsState.Value.Alerts.Any(a => a.IsActive))
+                        {
+                            <p class="text-muted">No active alerts found.</p>
+                            <button class="btn btn-outline-primary" @onclick="NavigateToAlerts">
+                                Create Your First Alert
+                            </button>
+                        }
+                        else
+                        {
+                            var activeAlerts = AlertsState.Value.Alerts.Where(a => a.IsActive).ToList();
+                            <p>You have <strong>@activeAlerts.Count</strong> active alerts.</p>
+                            <ul class="list-group">
+                                @foreach (var alert in activeAlerts.Take(5))
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>@alert.Symbol @@ @alert.TargetPrice.ToString("C2")</span>
+                                        <span class="badge @(alert.Type == VibeTrader.Domain.Enums.AlertType.PriceAbove ? "bg-success" : "bg-danger") rounded-pill">
+                                            @(alert.Type == VibeTrader.Domain.Enums.AlertType.PriceAbove ? "↑" : "↓")
+                                        </span>
+                                    </li>
+                                }
+                            </ul>
+                            @if (activeAlerts.Count > 5)
+                            {
+                                <div class="mt-2">
+                                    <small class="text-muted">And @(activeAlerts.Count - 5) more...</small>
+                                </div>
+                            }
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-primary" @onclick="NavigateToAlerts">
+                                    View All Alerts
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AlertsState.Value.IsInitialized && !AlertsState.Value.IsLoading)
+        {
+            await AlertService.LoadAlertsAsync(true);
+        }
+    }
+
+    private void NavigateToAlerts()
+    {
+        NavigationManager.NavigateTo("alerts");
+    }
+}

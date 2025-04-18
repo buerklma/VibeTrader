@@ -9,12 +9,12 @@ using VibeTrader.Domain.Exceptions;
 namespace VibeTrader.Application.Queries.GetAlertById
 {
     /// <summary>
-    /// Query to get a specific stock price alert by ID
+    /// Query to get a specific alert by its unique identifier
     /// </summary>
     public class GetAlertByIdQuery : IRequest<AlertDto>
     {
         /// <summary>
-        /// Unique identifier of the alert to retrieve
+        /// ID of the alert to retrieve
         /// </summary>
         public Guid Id { get; set; }
     }
@@ -36,9 +36,10 @@ namespace VibeTrader.Application.Queries.GetAlertById
             var alert = await _alertRepository.GetByIdAsync(request.Id, cancellationToken);
             
             if (alert == null)
-                throw new NotFoundException($"Alert with ID {request.Id} not found");
-            
-            // Map to DTO
+            {
+                throw new NotFoundException("Alert", request.Id);
+            }
+
             return new AlertDto
             {
                 Id = alert.Id,
@@ -47,7 +48,9 @@ namespace VibeTrader.Application.Queries.GetAlertById
                 Type = alert.Type,
                 CreatedOn = alert.CreatedOn,
                 TriggeredOn = alert.TriggeredOn,
-                IsActive = alert.IsActive
+                IsActive = alert.IsActive,
+                CreatedBy = alert.CreatedBy,
+                Notes = alert.Notes
             };
         }
     }

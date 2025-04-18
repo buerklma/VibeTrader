@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "ZZ8M1RrOkis=",
+  "success": true,
+  "projectFilePath": "C:\\Programming\\TestProjekte\\VibeTrader\\src\\Domain\\VibeTrader.Domain.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\marbu\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\9.0.4\\microsoft.extensions.dependencyinjection.abstractions.9.0.4.nupkg.sha512"
+  ],
+  "logs": []
+}

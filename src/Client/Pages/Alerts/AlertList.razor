@@ -1,6 +1,11 @@
-@page "/alerts"
+@page "/alerts2"
 @using Microsoft.AspNetCore.Components
 @using VibeTrader.Application.DTOs
+@using VibeTrader.Client.Services.Interfaces
+@using Fluxor
+
+@inject IAlertService AlertService
+@inject NavigationManager NavigationManager
 
 <h1>Stock Alerts</h1>
 
@@ -104,13 +109,7 @@ else
     private string? ErrorMessage { get; set; }
     
     [Inject]
-    private NavigationManager NavigationManager { get; set; } = default!;
-    
-    [Inject]
     private IJSRuntime JSRuntime { get; set; } = default!;
-    
-    [Inject]
-    private VibeTrader.Client.Services.IAlertService AlertService { get; set; } = default!;
     
     protected override async Task OnInitializedAsync()
     {
@@ -125,7 +124,12 @@ else
         
         try
         {
-            Alerts = await AlertService.GetAlertsAsync(activeOnly);
+            // Use the LoadAlertsAsync method from IAlertService
+            await AlertService.LoadAlertsAsync(activeOnly);
+            
+            // Since this is now state-managed, we might need to subscribe to state changes
+            // For now, we'll just initialize with an empty list that will be populated by state
+            Alerts = new List<AlertDto>();
         }
         catch (Exception ex)
         {

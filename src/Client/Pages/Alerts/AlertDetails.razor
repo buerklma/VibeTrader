@@ -1,4 +1,6 @@
 @page "/alerts/{Id:guid}"
+@using VibeTrader.Application.DTOs
+@using VibeTrader.Client.Services.Interfaces
 @using VibeTrader.Client.State.AlertState
 @using VibeTrader.Domain.Enums
 @using Fluxor
@@ -6,7 +8,7 @@
 @inject IDispatcher Dispatcher
 @inject IState<AlertState> AlertState
 @inject IJSRuntime JSRuntime
-@inject VibeTrader.Client.Services.IAlertService AlertService
+@inject IAlertService AlertService
 
 <PageTitle>Alert Details</PageTitle>
 
@@ -59,7 +61,7 @@
                         <div class="col-md-6">
                             <h4>Alert Type</h4>
                             <p class="lead">
-                                @if (alert.Type == AlertType.Above)
+                                @if (alert.Type == AlertType.PriceAbove)
                                 {
                                     <span>Alert when price goes above target</span>
                                 }
@@ -139,8 +141,8 @@
             // Use Fluxor state management
             Dispatcher.Dispatch(new LoadAlertAction(Id));
             
-            // Also directly fetch the alert as a fallback
-            _currentAlert = await AlertService.GetAlertByIdAsync(Id);
+            // Also directly fetch the alert as a fallback using the correct method name
+            _currentAlert = await AlertService.GetAlertAsync(Id);
         }
         catch (Exception ex)
         {

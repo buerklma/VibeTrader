@@ -1,37 +1,34 @@
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 using VibeTrader.Domain.Entities;
 
 namespace VibeTrader.Infrastructure.Data
 {
     /// <summary>
-    /// The main database context for the VibeTrader application
+    /// Entity Framework Core database context
     /// </summary>
     public class ApplicationDbContext : DbContext
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ApplicationDbContext"/> class
-        /// </summary>
-        /// <param name="options">The options for this context</param>
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
-        {
-        }
-
-        /// <summary>
-        /// Gets or sets the alerts database set
+        /// Alerts DbSet
         /// </summary>
         public DbSet<Alert> Alerts { get; set; } = null!;
 
         /// <summary>
-        /// Configures the model that was discovered by convention from the entity types
+        /// Creates a new instance of the ApplicationDbContext
         /// </summary>
-        /// <param name="modelBuilder">The builder being used to construct the model for this context</param>
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        {
+        }
+
+        /// <summary>
+        /// Configure the model that was discovered by convention from the entity types
+        /// </summary>
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+            
             base.OnModelCreating(modelBuilder);
-
-            // Apply entity configurations
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         }
     }
 }

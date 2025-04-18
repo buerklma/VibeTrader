@@ -42,5 +42,15 @@ namespace VibeTrader.Application.DTOs
         /// Indicates if the alert is currently active
         /// </summary>
         public bool IsActive { get; set; }
+
+        /// <summary>
+        /// User who created the alert
+        /// </summary>
+        public string CreatedBy { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Optional notes about the alert
+        /// </summary>
+        public string? Notes { get; set; }
     }
 }

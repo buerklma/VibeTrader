@@ -6,23 +6,25 @@ using Microsoft.Extensions.DependencyInjection;
 namespace VibeTrader.Application
 {
     /// <summary>
-    /// Contains extension methods for setting up application services in an IServiceCollection
+    /// Extension methods for configuring application services
     /// </summary>
     public static class DependencyInjection
     {
         /// <summary>
-        /// Adds application services to the specified IServiceCollection
+        /// Adds application services to the service collection
         /// </summary>
-        /// <param name="services">The IServiceCollection to add services to</param>
-        /// <returns>The same service collection so that multiple calls can be chained</returns>
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             // Register MediatR
-            services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+            services.AddMediatR(cfg => 
+                cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
             
             // Register FluentValidation
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
-            
+
+            // Register FluentValidation pipeline behavior
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
             return services;
         }
     }

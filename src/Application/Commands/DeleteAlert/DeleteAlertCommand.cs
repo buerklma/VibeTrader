@@ -8,9 +8,9 @@ using VibeTrader.Domain.Exceptions;
 namespace VibeTrader.Application.Commands.DeleteAlert
 {
     /// <summary>
-    /// Command to delete an existing stock price alert
+    /// Command to delete an existing stock alert
     /// </summary>
-    public class DeleteAlertCommand : IRequest<bool>
+    public class DeleteAlertCommand : IRequest<Unit>
     {
         /// <summary>
         /// Unique identifier of the alert to delete
@@ -21,7 +21,7 @@ namespace VibeTrader.Application.Commands.DeleteAlert
     /// <summary>
     /// Handler for the DeleteAlertCommand
     /// </summary>
-    public class DeleteAlertCommandHandler : IRequestHandler<DeleteAlertCommand, bool>
+    public class DeleteAlertCommandHandler : IRequestHandler<DeleteAlertCommand, Unit>
     {
         private readonly IAlertRepository _alertRepository;
 
@@ -30,17 +30,19 @@ namespace VibeTrader.Application.Commands.DeleteAlert
             _alertRepository = alertRepository;
         }
 
-        public async Task<bool> Handle(DeleteAlertCommand request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(DeleteAlertCommand request, CancellationToken cancellationToken)
         {
             var alert = await _alertRepository.GetByIdAsync(request.Id, cancellationToken);
             
             if (alert == null)
-                throw new NotFoundException($"Alert with ID {request.Id} not found");
-            
+            {
+                throw new NotFoundException("Alert", request.Id);
+            }
+
             await _alertRepository.DeleteAsync(alert, cancellationToken);
             await _alertRepository.SaveChangesAsync(cancellationToken);
-            
-            return true;
+
+            return Unit.Value;
         }
     }
 }

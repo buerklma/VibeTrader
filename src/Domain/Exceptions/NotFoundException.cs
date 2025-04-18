@@ -3,17 +3,10 @@ using System;
 namespace VibeTrader.Domain.Exceptions
 {
     /// <summary>
-    /// Exception thrown when a requested entity is not found
+    /// Exception thrown when a requested resource is not found
     /// </summary>
     public class NotFoundException : Exception
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="NotFoundException"/> class
-        /// </summary>
-        public NotFoundException() : base("The requested resource was not found.")
-        {
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="NotFoundException"/> class with a specified error message
         /// </summary>
@@ -23,12 +16,12 @@ namespace VibeTrader.Domain.Exceptions
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NotFoundException"/> class with a specified error message 
-        /// and a reference to the inner exception that is the cause of this exception
+        /// Initializes a new instance of the <see cref="NotFoundException"/> class with a specified entity name and key
         /// </summary>
-        /// <param name="message">The error message that explains the reason for the exception</param>
-        /// <param name="innerException">The exception that is the cause of the current exception</param>
-        public NotFoundException(string message, Exception innerException) : base(message, innerException)
+        /// <param name="name">The name of the entity</param>
+        /// <param name="key">The key of the entity</param>
+        public NotFoundException(string name, object key)
+            : base($"Entity \"{name}\" ({key}) was not found.")
         {
         }
     }

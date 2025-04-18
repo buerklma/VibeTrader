@@ -36,6 +36,14 @@ namespace VibeTrader.Infrastructure.Data.Configurations
 
             builder.Property(a => a.IsActive)
                 .IsRequired();
+                
+            builder.Property(a => a.CreatedBy)
+                .IsRequired()
+                .HasMaxLength(100);
+                
+            builder.Property(a => a.Notes)
+                .IsRequired(false)
+                .HasMaxLength(500);
         }
     }
 }

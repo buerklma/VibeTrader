@@ -1,0 +1,115 @@
+@using VibeTrader.Application.DTOs
+@using VibeTrader.Domain.Enums
+@using VibeTrader.Application.Commands.CreateAlert
+@using VibeTrader.Application.Commands.UpdateAlert
+
+<div class="alert-form">
+    <EditForm Model="@Model" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="symbol" class="form-label">Stock Symbol</label>
+            <InputText id="symbol" @bind-Value="Model.Symbol" class="form-control" />
+            <ValidationMessage For="@(() => Model.Symbol)" />
+            <small class="form-text text-muted">Enter a valid stock ticker symbol (e.g., MSFT, AAPL).</small>
+        </div>
+
+        <div class="mb-3">
+            <label for="targetPrice" class="form-label">Target Price</label>
+            <InputNumber id="targetPrice" @bind-Value="Model.TargetPrice" class="form-control" />
+            <ValidationMessage For="@(() => Model.TargetPrice)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="type" class="form-label">Alert Type</label>
+            <InputSelect id="type" @bind-Value="Model.Type" class="form-select">
+                <option value="@AlertType.PriceAbove">Price Above Target</option>
+                <option value="@AlertType.PriceBelow">Price Below Target</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => Model.Type)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="notes" class="form-label">Notes (Optional)</label>
+            <InputTextArea id="notes" @bind-Value="Model.Notes" class="form-control" rows="3" />
+            <ValidationMessage For="@(() => Model.Notes)" />
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-secondary" @onclick="OnCancel">Cancel</button>
+            <button type="submit" class="btn btn-primary">@(IsEdit ? "Update" : "Create") Alert</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public AlertFormModel Model { get; set; } = new();
+
+    [Parameter]
+    public bool IsEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<AlertFormModel> OnSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private async Task HandleValidSubmit()
+    {
+        await OnSubmit.InvokeAsync(Model);
+    }
+
+    public class AlertFormModel
+    {
+        public Guid Id { get; set; } = Guid.Empty;
+
+        public string Symbol { get; set; } = string.Empty;
+
+        public decimal TargetPrice { get; set; } = 0;
+
+        public AlertType Type { get; set; } = AlertType.PriceAbove;
+
+        public string? Notes { get; set; }
+        
+        public string CreatedBy { get; set; } = "User"; // Would normally be set from authentication
+
+        public static AlertFormModel FromAlert(AlertDto alert)
+        {
+            return new AlertFormModel
+            {
+                Id = alert.Id,
+                Symbol = alert.Symbol,
+                TargetPrice = alert.TargetPrice,
+                Type = alert.Type,
+                Notes = alert.Notes,
+                CreatedBy = alert.CreatedBy
+            };
+        }
+
+        public CreateAlertCommand ToCreateCommand()
+        {
+            return new CreateAlertCommand
+            {
+                Symbol = Symbol,
+                TargetPrice = TargetPrice,
+                Type = Type,
+                Notes = Notes,
+                CreatedBy = CreatedBy
+            };
+        }
+
+        public UpdateAlertCommand ToUpdateCommand()
+        {
+            return new UpdateAlertCommand
+            {
+                Id = Id,
+                Symbol = Symbol,
+                TargetPrice = TargetPrice,
+                Type = Type,
+                Notes = Notes
+            };
+        }
+    }
+}

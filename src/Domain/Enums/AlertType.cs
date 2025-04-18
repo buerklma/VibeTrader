@@ -6,13 +6,13 @@ namespace VibeTrader.Domain.Enums
     public enum AlertType
     {
         /// <summary>
-        /// Alert triggers when the stock price goes above the target price
+        /// Alert triggers when price goes above target price
         /// </summary>
-        Above = 1,
-        
+        PriceAbove = 1,
+
         /// <summary>
-        /// Alert triggers when the stock price goes below the target price
+        /// Alert triggers when price goes below target price
         /// </summary>
-        Below = 2
+        PriceBelow = 2
     }
 }

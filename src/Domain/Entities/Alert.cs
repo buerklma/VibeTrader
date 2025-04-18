@@ -1,10 +1,11 @@
 using System;
 using VibeTrader.Domain.Enums;
+using VibeTrader.Domain.Exceptions;
 
 namespace VibeTrader.Domain.Entities
 {
     /// <summary>
-    /// Represents a stock price alert that can be triggered when conditions are met
+    /// Represents a stock price alert entity
     /// </summary>
     public class Alert
     {
@@ -12,52 +13,70 @@ namespace VibeTrader.Domain.Entities
         /// Unique identifier for the alert
         /// </summary>
         public Guid Id { get; private set; }
-        
+
         /// <summary>
-        /// Stock symbol this alert is for (e.g., AAPL, MSFT)
+        /// Stock symbol the alert is for (e.g., MSFT, AAPL)
         /// </summary>
         public string Symbol { get; private set; }
-        
+
         /// <summary>
-        /// Target price that triggers this alert
+        /// Target price that will trigger the alert
         /// </summary>
         public decimal TargetPrice { get; private set; }
-        
+
         /// <summary>
-        /// Type of alert (Above or Below the target price)
+        /// Type of the alert (above or below the target price)
         /// </summary>
         public AlertType Type { get; private set; }
-        
+
         /// <summary>
         /// Date and time when the alert was created
         /// </summary>
         public DateTime CreatedOn { get; private set; }
-        
+
         /// <summary>
-        /// Date and time when the alert was triggered, or null if not yet triggered
+        /// Date and time when the alert was triggered, null if not triggered yet
         /// </summary>
         public DateTime? TriggeredOn { get; private set; }
-        
+
         /// <summary>
         /// Indicates if the alert is currently active
         /// </summary>
         public bool IsActive { get; private set; }
 
-        // Private constructor for EF Core
-        private Alert() { }
+        /// <summary>
+        /// User who created the alert
+        /// </summary>
+        public string CreatedBy { get; private set; }
+
+        /// <summary>
+        /// Optional notes about the alert
+        /// </summary>
+        public string? Notes { get; private set; }
+
+        // For EF Core
+        protected Alert() { }
 
         /// <summary>
         /// Creates a new stock alert
         /// </summary>
-        public Alert(string symbol, decimal targetPrice, AlertType type)
+        public Alert(string symbol, decimal targetPrice, AlertType type, string createdBy, string? notes = null)
         {
             if (string.IsNullOrWhiteSpace(symbol))
-                throw new ArgumentException("Symbol cannot be empty", nameof(symbol));
+                throw new AlertDomainException("Symbol cannot be empty");
 
+            if (targetPrice <= 0)
+                throw new AlertDomainException("Target price must be greater than zero");
+
+            if (string.IsNullOrWhiteSpace(createdBy))
+                throw new AlertDomainException("Creator must be specified");
+            
             Id = Guid.NewGuid();
             Symbol = symbol.ToUpper().Trim();
             TargetPrice = targetPrice;
             Type = type;
+            CreatedBy = createdBy;
+            Notes = notes;
             CreatedOn = DateTime.UtcNow;
             IsActive = true;
         }
@@ -65,43 +84,74 @@ namespace VibeTrader.Domain.Entities
         /// <summary>
         /// Updates the alert properties
         /// </summary>
-        public void Update(string symbol, decimal targetPrice, AlertType type)
+        public void Update(string symbol, decimal targetPrice, AlertType type, string? notes)
         {
             if (string.IsNullOrWhiteSpace(symbol))
-                throw new ArgumentException("Symbol cannot be empty", nameof(symbol));
+                throw new AlertDomainException("Symbol cannot be empty");
+
+            if (targetPrice <= 0)
+                throw new AlertDomainException("Target price must be greater than zero");
 
             Symbol = symbol.ToUpper().Trim();
             TargetPrice = targetPrice;
             Type = type;
+            Notes = notes;
         }
 
         /// <summary>
-        /// Triggers the alert, marking it as inactive and recording the trigger time
+        /// Triggers the alert when the target price is reached
         /// </summary>
         public void Trigger()
         {
             if (!IsActive)
-                return;
+                throw new AlertDomainException("Cannot trigger an inactive alert");
+
+            if (TriggeredOn.HasValue)
+                throw new AlertDomainException("Alert has already been triggered");
 
             TriggeredOn = DateTime.UtcNow;
             IsActive = false;
         }
 
         /// <summary>
-        /// Reactivates the alert if it was previously triggered
+        /// Deactivates the alert
+        /// </summary>
+        public void Deactivate()
+        {
+            if (!IsActive)
+                return;
+                
+            IsActive = false;
+        }
+
+        /// <summary>
+        /// Reactivates the alert if it was deactivated but not triggered
         /// </summary>
         public void Reactivate()
         {
-            TriggeredOn = null;
+            if (IsActive)
+                return;
+                
+            if (TriggeredOn.HasValue)
+                throw new AlertDomainException("Cannot reactivate a triggered alert");
+                
             IsActive = true;
         }
 
         /// <summary>
-        /// Deactivates the alert without triggering it
+        /// Checks if the current stock price should trigger this alert
         /// </summary>
-        public void Deactivate()
+        public bool ShouldTrigger(decimal currentPrice)
         {
-            IsActive = false;
+            if (!IsActive || TriggeredOn.HasValue)
+                return false;
+
+            return Type switch
+            {
+                AlertType.PriceAbove => currentPrice >= TargetPrice,
+                AlertType.PriceBelow => currentPrice <= TargetPrice,
+                _ => throw new AlertDomainException($"Unknown alert type: {Type}")
+            };
         }
     }
 }

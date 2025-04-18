@@ -3,21 +3,18 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using VibeTrader.Application.Interfaces;
 using VibeTrader.Infrastructure.Data;
-using VibeTrader.Infrastructure.Data.Repositories;
+using VibeTrader.Infrastructure.Services;
 
 namespace VibeTrader.Infrastructure
 {
     /// <summary>
-    /// Contains extension methods for setting up infrastructure services in an IServiceCollection
+    /// Extension methods for configuring infrastructure services
     /// </summary>
     public static class DependencyInjection
     {
         /// <summary>
-        /// Adds infrastructure services to the specified IServiceCollection
+        /// Adds infrastructure services to the service collection
         /// </summary>
-        /// <param name="services">The IServiceCollection to add services to</param>
-        /// <param name="configuration">The configuration instance</param>
-        /// <returns>The same service collection so that multiple calls can be chained</returns>
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
             // Register DbContext
@@ -28,6 +25,12 @@ namespace VibeTrader.Infrastructure
 
             // Register repositories
             services.AddScoped<IAlertRepository, AlertRepository>();
+            
+            // Register services
+            services.AddScoped<IStockPriceService, StockPriceService>();
+
+            // Register background services
+            services.AddHostedService<StockPriceMonitorService>();
 
             return services;
         }

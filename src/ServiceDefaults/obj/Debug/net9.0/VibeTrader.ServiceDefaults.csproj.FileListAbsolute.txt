@@ -1,0 +1,13 @@
+C:\Programming\TestProjekte\VibeTrader\src\ServiceDefaults\bin\Debug\net9.0\VibeTrader.ServiceDefaults.deps.json
+C:\Programming\TestProjekte\VibeTrader\src\ServiceDefaults\bin\Debug\net9.0\VibeTrader.ServiceDefaults.dll
+C:\Programming\TestProjekte\VibeTrader\src\ServiceDefaults\bin\Debug\net9.0\VibeTrader.ServiceDefaults.pdb
+C:\Programming\TestProjekte\VibeTrader\src\ServiceDefaults\obj\Debug\net9.0\VibeTrader.ServiceDefaults.csproj.AssemblyReference.cache
+C:\Programming\TestProjekte\VibeTrader\src\ServiceDefaults\obj\Debug\net9.0\VibeTrader.ServiceDefaults.GeneratedMSBuildEditorConfig.editorconfig
+C:\Programming\TestProjekte\VibeTrader\src\ServiceDefaults\obj\Debug\net9.0\VibeTrader.ServiceDefaults.AssemblyInfoInputs.cache
+C:\Programming\TestProjekte\VibeTrader\src\ServiceDefaults\obj\Debug\net9.0\VibeTrader.ServiceDefaults.AssemblyInfo.cs
+C:\Programming\TestProjekte\VibeTrader\src\ServiceDefaults\obj\Debug\net9.0\VibeTrader.ServiceDefaults.csproj.CoreCompileInputs.cache
+C:\Programming\TestProjekte\VibeTrader\src\ServiceDefaults\obj\Debug\net9.0\VibeTrader.ServiceDefaults.sourcelink.json
+C:\Programming\TestProjekte\VibeTrader\src\ServiceDefaults\obj\Debug\net9.0\VibeTrader.ServiceDefaults.dll
+C:\Programming\TestProjekte\VibeTrader\src\ServiceDefaults\obj\Debug\net9.0\refint\VibeTrader.ServiceDefaults.dll
+C:\Programming\TestProjekte\VibeTrader\src\ServiceDefaults\obj\Debug\net9.0\VibeTrader.ServiceDefaults.pdb
+C:\Programming\TestProjekte\VibeTrader\src\ServiceDefaults\obj\Debug\net9.0\ref\VibeTrader.ServiceDefaults.dll

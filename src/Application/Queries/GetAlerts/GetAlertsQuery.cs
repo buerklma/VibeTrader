@@ -9,12 +9,12 @@ using VibeTrader.Application.Interfaces;
 namespace VibeTrader.Application.Queries.GetAlerts
 {
     /// <summary>
-    /// Query to get all stock price alerts
+    /// Query to get all alerts with optional filter for active alerts only
     /// </summary>
     public class GetAlertsQuery : IRequest<List<AlertDto>>
     {
         /// <summary>
-        /// Filter to only show active alerts
+        /// When true, returns only active alerts
         /// </summary>
         public bool ActiveOnly { get; set; }
     }
@@ -47,7 +47,9 @@ namespace VibeTrader.Application.Queries.GetAlerts
                 Type = alert.Type,
                 CreatedOn = alert.CreatedOn,
                 TriggeredOn = alert.TriggeredOn,
-                IsActive = alert.IsActive
+                IsActive = alert.IsActive,
+                CreatedBy = alert.CreatedBy,
+                Notes = alert.Notes
             }).ToList();
         }
     }

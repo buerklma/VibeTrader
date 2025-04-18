@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aspire-vibetrader-api-48c3ee21</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Application\VibeTrader.Application.csproj" />
     <ProjectReference Include="..\Infrastructure\VibeTrader.Infrastructure.csproj" />
+    <ProjectReference Include="..\ServiceDefaults\VibeTrader.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

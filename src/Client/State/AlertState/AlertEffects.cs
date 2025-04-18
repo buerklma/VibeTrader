@@ -2,21 +2,21 @@ using System;
 using System.Threading.Tasks;
 using Fluxor;
 using Microsoft.Extensions.Logging;
-using VibeTrader.Client.Services;
+using VibeTrader.Client.Services.Interfaces;
 
 namespace VibeTrader.Client.State.AlertState
 {
     /// <summary>
-    /// Effects for alert state management
+    /// Effects for handling side effects of alert state changes
     /// </summary>
     public class AlertEffects
     {
-        private readonly IAlertService _alertService;
+        private readonly IAlertApiService _alertApiService;
         private readonly ILogger<AlertEffects> _logger;
 
-        public AlertEffects(IAlertService alertService, ILogger<AlertEffects> logger)
+        public AlertEffects(IAlertApiService alertApiService, ILogger<AlertEffects> logger)
         {
-            _alertService = alertService;
+            _alertApiService = alertApiService;
             _logger = logger;
         }
 
@@ -25,13 +25,14 @@ namespace VibeTrader.Client.State.AlertState
         {
             try
             {
-                var alerts = await _alertService.GetAlertsAsync(action.ActiveOnly);
+                _logger.LogInformation("Loading alerts from API (ActiveOnly: {ActiveOnly})", action.ActiveOnly);
+                var alerts = await _alertApiService.GetAlertsAsync(action.ActiveOnly);
                 dispatcher.Dispatch(new LoadAlertsSuccessAction(alerts));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading alerts");
-                dispatcher.Dispatch(new LoadAlertsFailureAction($"Error loading alerts: {ex.Message}"));
+                dispatcher.Dispatch(new LoadAlertsFailureAction(ex.Message));
             }
         }
 
@@ -40,13 +41,14 @@ namespace VibeTrader.Client.State.AlertState
         {
             try
             {
-                var alert = await _alertService.GetAlertByIdAsync(action.Id);
+                _logger.LogInformation("Loading alert details for ID: {AlertId}", action.Id);
+                var alert = await _alertApiService.GetAlertByIdAsync(action.Id);
                 dispatcher.Dispatch(new LoadAlertSuccessAction(alert));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading alert {AlertId}", action.Id);
-                dispatcher.Dispatch(new LoadAlertFailureAction($"Error loading alert: {ex.Message}"));
+                _logger.LogError(ex, "Error loading alert with ID {AlertId}", action.Id);
+                dispatcher.Dispatch(new LoadAlertFailureAction(ex.Message));
             }
         }
 
@@ -55,17 +57,23 @@ namespace VibeTrader.Client.State.AlertState
         {
             try
             {
-                var createdAlert = await _alertService.CreateAlertAsync(
-                    action.Symbol,
-                    action.TargetPrice,
-                    action.Type);
+                _logger.LogInformation("Creating alert for symbol: {Symbol}", action.Symbol);
                 
+                var command = new VibeTrader.Application.Commands.CreateAlert.CreateAlertCommand
+                {
+                    Symbol = action.Symbol,
+                    TargetPrice = action.TargetPrice,
+                    Type = action.Type,
+                    CreatedBy = "User" // In a real app, this would come from authentication
+                };
+                
+                var createdAlert = await _alertApiService.CreateAlertAsync(command);
                 dispatcher.Dispatch(new CreateAlertSuccessAction(createdAlert));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating alert for {Symbol}", action.Symbol);
-                dispatcher.Dispatch(new CreateAlertFailureAction($"Error creating alert: {ex.Message}"));
+                _logger.LogError(ex, "Error creating alert for symbol {Symbol}", action.Symbol);
+                dispatcher.Dispatch(new CreateAlertFailureAction(ex.Message));
             }
         }
 
@@ -74,18 +82,23 @@ namespace VibeTrader.Client.State.AlertState
         {
             try
             {
-                var updatedAlert = await _alertService.UpdateAlertAsync(
-                    action.Id,
-                    action.Symbol,
-                    action.TargetPrice,
-                    action.Type);
+                _logger.LogInformation("Updating alert with ID: {AlertId}", action.Id);
                 
+                var command = new VibeTrader.Application.Commands.UpdateAlert.UpdateAlertCommand
+                {
+                    Id = action.Id,
+                    Symbol = action.Symbol,
+                    TargetPrice = action.TargetPrice,
+                    Type = action.Type
+                };
+                
+                var updatedAlert = await _alertApiService.UpdateAlertAsync(command);
                 dispatcher.Dispatch(new UpdateAlertSuccessAction(updatedAlert));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating alert {AlertId}", action.Id);
-                dispatcher.Dispatch(new UpdateAlertFailureAction($"Error updating alert: {ex.Message}"));
+                _logger.LogError(ex, "Error updating alert with ID {AlertId}", action.Id);
+                dispatcher.Dispatch(new UpdateAlertFailureAction(ex.Message));
             }
         }
 
@@ -94,13 +107,14 @@ namespace VibeTrader.Client.State.AlertState
         {
             try
             {
-                await _alertService.DeleteAlertAsync(action.Id);
+                _logger.LogInformation("Deleting alert with ID: {AlertId}", action.Id);
+                await _alertApiService.DeleteAlertAsync(action.Id);
                 dispatcher.Dispatch(new DeleteAlertSuccessAction(action.Id));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting alert {AlertId}", action.Id);
-                dispatcher.Dispatch(new DeleteAlertFailureAction($"Error deleting alert: {ex.Message}"));
+                _logger.LogError(ex, "Error deleting alert with ID {AlertId}", action.Id);
+                dispatcher.Dispatch(new DeleteAlertFailureAction(ex.Message));
             }
         }
     }

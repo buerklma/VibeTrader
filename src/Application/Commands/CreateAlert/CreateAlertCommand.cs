@@ -1,20 +1,21 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using VibeTrader.Application.DTOs;
+using VibeTrader.Application.Interfaces;
 using VibeTrader.Domain.Entities;
 using VibeTrader.Domain.Enums;
-using VibeTrader.Application.Interfaces;
 
 namespace VibeTrader.Application.Commands.CreateAlert
 {
     /// <summary>
-    /// Command to create a new stock price alert
+    /// Command to create a new stock alert
     /// </summary>
     public class CreateAlertCommand : IRequest<AlertDto>
     {
         /// <summary>
-        /// Stock symbol for the alert
+        /// Stock symbol (e.g. MSFT, AAPL)
         /// </summary>
         public string Symbol { get; set; } = string.Empty;
         
@@ -24,9 +25,19 @@ namespace VibeTrader.Application.Commands.CreateAlert
         public decimal TargetPrice { get; set; }
         
         /// <summary>
-        /// Type of the alert (Above or Below target price)
+        /// Type of alert (above or below target price)
         /// </summary>
         public AlertType Type { get; set; }
+        
+        /// <summary>
+        /// User who created the alert
+        /// </summary>
+        public string CreatedBy { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// Optional notes about the alert
+        /// </summary>
+        public string? Notes { get; set; }
     }
 
     /// <summary>
@@ -43,13 +54,17 @@ namespace VibeTrader.Application.Commands.CreateAlert
 
         public async Task<AlertDto> Handle(CreateAlertCommand request, CancellationToken cancellationToken)
         {
-            var alert = new Alert(request.Symbol, request.TargetPrice, request.Type);
-            
+            var alert = new Alert(
+                request.Symbol,
+                request.TargetPrice,
+                request.Type,
+                request.CreatedBy,
+                request.Notes);
+
             await _alertRepository.AddAsync(alert, cancellationToken);
             await _alertRepository.SaveChangesAsync(cancellationToken);
-            
-            // Map to DTO
-            var alertDto = new AlertDto
+
+            return new AlertDto
             {
                 Id = alert.Id,
                 Symbol = alert.Symbol,
@@ -57,10 +72,10 @@ namespace VibeTrader.Application.Commands.CreateAlert
                 Type = alert.Type,
                 CreatedOn = alert.CreatedOn,
                 TriggeredOn = alert.TriggeredOn,
-                IsActive = alert.IsActive
+                IsActive = alert.IsActive,
+                CreatedBy = alert.CreatedBy,
+                Notes = alert.Notes
             };
-            
-            return alertDto;
         }
     }
 }

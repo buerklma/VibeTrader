@@ -30,6 +30,7 @@ namespace VibeTrader.Client.State.AlertState
     public record DeleteAlertSuccessAction(Guid Id);
     public record DeleteAlertFailureAction(string ErrorMessage);
 
-    // Error Handling
+    // Clear Actions
+    public record ClearCurrentAlertAction();
     public record ClearErrorAction();
 }

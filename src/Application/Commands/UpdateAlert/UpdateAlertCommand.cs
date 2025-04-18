@@ -10,7 +10,7 @@ using VibeTrader.Domain.Exceptions;
 namespace VibeTrader.Application.Commands.UpdateAlert
 {
     /// <summary>
-    /// Command to update an existing stock price alert
+    /// Command to update an existing stock alert
     /// </summary>
     public class UpdateAlertCommand : IRequest<AlertDto>
     {
@@ -20,19 +20,24 @@ namespace VibeTrader.Application.Commands.UpdateAlert
         public Guid Id { get; set; }
         
         /// <summary>
-        /// New stock symbol for the alert
+        /// New stock symbol
         /// </summary>
         public string Symbol { get; set; } = string.Empty;
         
         /// <summary>
-        /// New target price that will trigger the alert
+        /// New target price
         /// </summary>
         public decimal TargetPrice { get; set; }
         
         /// <summary>
-        /// New type of the alert (Above or Below target price)
+        /// New alert type
         /// </summary>
         public AlertType Type { get; set; }
+        
+        /// <summary>
+        /// New notes (optional)
+        /// </summary>
+        public string? Notes { get; set; }
     }
 
     /// <summary>
@@ -52,15 +57,20 @@ namespace VibeTrader.Application.Commands.UpdateAlert
             var alert = await _alertRepository.GetByIdAsync(request.Id, cancellationToken);
             
             if (alert == null)
-                throw new NotFoundException($"Alert with ID {request.Id} not found");
-            
-            alert.Update(request.Symbol, request.TargetPrice, request.Type);
-            
+            {
+                throw new NotFoundException("Alert", request.Id);
+            }
+
+            alert.Update(
+                request.Symbol,
+                request.TargetPrice,
+                request.Type,
+                request.Notes);
+
             await _alertRepository.UpdateAsync(alert, cancellationToken);
             await _alertRepository.SaveChangesAsync(cancellationToken);
-            
-            // Map to DTO
-            var alertDto = new AlertDto
+
+            return new AlertDto
             {
                 Id = alert.Id,
                 Symbol = alert.Symbol,
@@ -68,10 +78,10 @@ namespace VibeTrader.Application.Commands.UpdateAlert
                 Type = alert.Type,
                 CreatedOn = alert.CreatedOn,
                 TriggeredOn = alert.TriggeredOn,
-                IsActive = alert.IsActive
+                IsActive = alert.IsActive,
+                CreatedBy = alert.CreatedBy,
+                Notes = alert.Notes
             };
-            
-            return alertDto;
         }
     }
 }

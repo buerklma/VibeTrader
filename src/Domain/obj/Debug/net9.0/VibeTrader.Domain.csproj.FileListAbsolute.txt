@@ -1,0 +1,13 @@
+C:\Programming\TestProjekte\VibeTrader\src\Domain\bin\Debug\net9.0\VibeTrader.Domain.deps.json
+C:\Programming\TestProjekte\VibeTrader\src\Domain\bin\Debug\net9.0\VibeTrader.Domain.dll
+C:\Programming\TestProjekte\VibeTrader\src\Domain\bin\Debug\net9.0\VibeTrader.Domain.pdb
+C:\Programming\TestProjekte\VibeTrader\src\Domain\obj\Debug\net9.0\VibeTrader.Domain.csproj.AssemblyReference.cache
+C:\Programming\TestProjekte\VibeTrader\src\Domain\obj\Debug\net9.0\VibeTrader.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Programming\TestProjekte\VibeTrader\src\Domain\obj\Debug\net9.0\VibeTrader.Domain.AssemblyInfoInputs.cache
+C:\Programming\TestProjekte\VibeTrader\src\Domain\obj\Debug\net9.0\VibeTrader.Domain.AssemblyInfo.cs
+C:\Programming\TestProjekte\VibeTrader\src\Domain\obj\Debug\net9.0\VibeTrader.Domain.csproj.CoreCompileInputs.cache
+C:\Programming\TestProjekte\VibeTrader\src\Domain\obj\Debug\net9.0\VibeTrader.Domain.sourcelink.json
+C:\Programming\TestProjekte\VibeTrader\src\Domain\obj\Debug\net9.0\VibeTrader.Domain.dll
+C:\Programming\TestProjekte\VibeTrader\src\Domain\obj\Debug\net9.0\refint\VibeTrader.Domain.dll
+C:\Programming\TestProjekte\VibeTrader\src\Domain\obj\Debug\net9.0\VibeTrader.Domain.pdb
+C:\Programming\TestProjekte\VibeTrader\src\Domain\obj\Debug\net9.0\ref\VibeTrader.Domain.dll
